@@ -38,9 +38,11 @@ public class PET {
     
     // Create ElGamal systems
     Elgamal player1 = new Elgamal(p, g1, d1);
+    System.out.println("player1 priv key is " + SaM.SquareAndMultiply(g1, d1, p));
     BigInteger i1 = Crypto.RandomInRange(BigInteger.TWO, p.subtract(BigInteger.ONE));
     System.out.println("i1 is " + i1);
     Elgamal player2 = new Elgamal(p, g2, d2);
+    System.out.println("player2 priv key is " + SaM.SquareAndMultiply(g2, d2, p));
     BigInteger i2 = Crypto.RandomInRange(BigInteger.TWO, p.subtract(BigInteger.ONE));
     System.out.println("i2 is " + i2);
 
