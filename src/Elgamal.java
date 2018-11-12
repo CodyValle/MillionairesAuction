@@ -62,29 +62,6 @@ public class Elgamal {
 
 	/**
 	 * 
-	 * Represents the Cipher containing the ephemeral key and ciphertext
-	 *
-	 */
-	class Cipher {
-		private BigInteger ke;
-		private BigInteger ctext;
-
-		public Cipher(BigInteger ke, BigInteger ctext) {
-			this.ke = ke;
-			this.ctext = ctext;
-		}
-
-		public BigInteger getKe() {
-			return ke;
-		}
-
-		public BigInteger getCtext() {
-			return ctext;
-		}
-	}
-
-	/**
-	 * 
 	 * Represents the public key containing the prime p, generator alpha, and beta
 	 *
 	 */
