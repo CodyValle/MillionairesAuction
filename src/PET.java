@@ -20,8 +20,8 @@ public class PET {
     // Have the players encrypt their messages using the other player's public key
     //byte[] p1CipherText = player1.encryptWith(player2.getPublicKey());
     //byte[] p2CipherText = player2.encryptWith(player1.getPublicKey());
-    byte[] p1CipherText = player1.encrypt();
-    byte[] p2CipherText = player2.encrypt();
+    byte[] p1CipherText = player1.encrypt_ElGamal();
+    byte[] p2CipherText = player2.encrypt_ElGamal();
 
     // Cut the ciphertexts in half. Alpha and beta.
     int half = p1CipherText.length / 2;
@@ -97,8 +97,9 @@ public class PET {
       Security.addProvider(new BouncyCastleProvider());
 
       // Set up 
-      final int keySize = 2048;
-      /*
+      final int keySize = 256;
+      System.out.println("Keysize bits: " + keySize);
+      
       // This is slow. Fifteen minutes on my old machine
       ElGamalParametersGenerator gen = new ElGamalParametersGenerator();
       int certainty = 4;
@@ -106,10 +107,10 @@ public class PET {
       ElGamalParameters PandG = gen.generateParameters();
       System.out.println("p is " + PandG.getP().toString(16));
       System.out.println("g is " + PandG.getG().toString(16));
-      */
-      BigInteger p = new BigInteger("e2a4f19cfb298034366a808256f5ebf0c31dd4db77d77fe8c6570c517269589c7d660a4c0a588a411bcadd7e930267da58ee58f0d63209d3a41adfb37a52f4d86269c684935b9e018240cb3a64650a65eb66ebdcb0d422c9143e14a417bd650248e3935c2dc3a0512b04edbece76ecc4260b33edc8e7b1e1a30aed862ce7a96a3259fdb89bbe508bec5afdae1c1f48d0055fd9e52a031e245637b60af1c3b5d948df4544d88eb23439ed56e3cd020b989c7c70d0d23e128fc68d967f852b333077c44e09c14dfe9035307f1ed1eddf856cfe00488f5f1181f69220487d6cb9413b05a9ab5300adbf89177820b9c075e99d956ea60a21067260c4a90f3975f1f7", 16);
-      BigInteger g = new BigInteger("7ad82ef479128bb322e4cb0457f0285ce8e7555ec930c8f3235d21f22e4dba417171995f25b94c0dc2bcb7253898a5c1ad390493edf3c67e3f6771ad98594e58c09325531296f9859b15cfbaf8b51a90548874294b1af3bb619df5ea8e3da702816f1239d364c7e0ea2d0217ea9be20f188365d21ece72d199ef63dd5e46584acc6dbcd876e1e90b710089f42a8a2d55d9ed59267fb2b4504adeff361f38b19aca62e7caa72e6f666d1c78aab56920d0cf4782e95bb248b2c0f3e559c861f48b4642d0e246f3c1ad5f3743ceeb48c211e595f8423172379db31469bbfa05c58c45835a69efbc632d21254c9b40ef0cf4362b6906a5b9ff328a0d4c4a725ca535", 16);
-      DHParameterSpec elParams = new DHParameterSpec(p, g, keySize);
+      
+      //BigInteger p = new BigInteger("e2a4f19cfb298034366a808256f5ebf0c31dd4db77d77fe8c6570c517269589c7d660a4c0a588a411bcadd7e930267da58ee58f0d63209d3a41adfb37a52f4d86269c684935b9e018240cb3a64650a65eb66ebdcb0d422c9143e14a417bd650248e3935c2dc3a0512b04edbece76ecc4260b33edc8e7b1e1a30aed862ce7a96a3259fdb89bbe508bec5afdae1c1f48d0055fd9e52a031e245637b60af1c3b5d948df4544d88eb23439ed56e3cd020b989c7c70d0d23e128fc68d967f852b333077c44e09c14dfe9035307f1ed1eddf856cfe00488f5f1181f69220487d6cb9413b05a9ab5300adbf89177820b9c075e99d956ea60a21067260c4a90f3975f1f7", 16);
+      //BigInteger g = new BigInteger("7ad82ef479128bb322e4cb0457f0285ce8e7555ec930c8f3235d21f22e4dba417171995f25b94c0dc2bcb7253898a5c1ad390493edf3c67e3f6771ad98594e58c09325531296f9859b15cfbaf8b51a90548874294b1af3bb619df5ea8e3da702816f1239d364c7e0ea2d0217ea9be20f188365d21ece72d199ef63dd5e46584acc6dbcd876e1e90b710089f42a8a2d55d9ed59267fb2b4504adeff361f38b19aca62e7caa72e6f666d1c78aab56920d0cf4782e95bb248b2c0f3e559c861f48b4642d0e246f3c1ad5f3743ceeb48c211e595f8423172379db31469bbfa05c58c45835a69efbc632d21254c9b40ef0cf4362b6906a5b9ff328a0d4c4a725ca535", 16);
+      DHParameterSpec elParams = new DHParameterSpec(PandG.getP(), PandG.getG(), keySize);
 
       // Two players
       Player player1 = new Player("Player");
