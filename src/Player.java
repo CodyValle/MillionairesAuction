@@ -56,6 +56,20 @@ public class Player {
     return new byte[0];
   }
 
+  public byte[] encrypt() {
+    try {
+      Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
+      cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+      System.out.println("Cipher output size is " + cipher.getOutputSize(message.length));
+      return cipher.doFinal(message);
+    }
+    catch (Exception e) {
+      System.out.println("Caught exception: " + e);
+    }
+
+    return new byte[0];
+  }
+
   public byte[] decrypt(byte[] cipherText) {
     try {
       Cipher decCipher = Cipher.getInstance("ElGamal/None/NoPadding", BouncyCastleProvider.PROVIDER_NAME);

@@ -18,11 +18,72 @@ public class PET {
 
   public boolean checkEquality(Player player1, Player player2) {
     // Have the players encrypt their messages using the other player's public key
-    byte[] p1CipherText = player1.encryptWith(player2.getPublicKey());
-    byte[] p2CipherText = player2.encryptWith(player1.getPublicKey());
+    //byte[] p1CipherText = player1.encryptWith(player2.getPublicKey());
+    //byte[] p2CipherText = player2.encryptWith(player1.getPublicKey());
+    byte[] p1CipherText = player1.encrypt();
+    byte[] p2CipherText = player2.encrypt();
 
-    System.out.println("Player1 ciphertext is " + new String(p1CipherText));
-    System.out.println("Player2 ciphertext is " + new String(p2CipherText));
+    // Cut the ciphertexts in half. Alpha and beta.
+    int half = p1CipherText.length / 2;
+
+    byte[] p1Alpha = new byte[half];
+    byte[] p1Beta = new byte[half];
+    System.arraycopy(p1CipherText, 0, p1Alpha, 0, half);
+    System.arraycopy(p1CipherText, half, p1Beta, 0, half);
+
+    byte[] p2Alpha = new byte[half];
+    byte[] p2Beta = new byte[half];
+    System.arraycopy(p2CipherText, 0, p2Alpha, 0, half);
+    System.arraycopy(p2CipherText, half, p2Beta, 0, half);
+
+    // Convert the alphas and betas to BigIntegers
+    BigInteger p1AlphaBI = new BigInteger(p1Alpha);
+    BigInteger p1BetaBI = new BigInteger(p1Beta);
+    BigInteger p2AlphaBI = new BigInteger(p2Alpha);
+    BigInteger p2BetaBI = new BigInteger(p2Beta);
+    System.out.println("p1Alpha: " + (p1AlphaBI));
+    System.out.println("p1Beta: " + (p1BetaBI));
+    System.out.println("p2Alpha: " + (p2AlphaBI));
+    System.out.println("p2Beta: " + (p2BetaBI));
+
+    // Each player computes epsilon and zeta
+    BigInteger p1Epsilon = p1AlphaBI.divide(p2AlphaBI);
+    BigInteger p1Zeta = p1BetaBI.divide(p2BetaBI);
+    BigInteger p2Epsilon = p2AlphaBI.divide(p1AlphaBI);
+    BigInteger p2Zeta = p2BetaBI.divide(p1BetaBI);
+    System.out.println("p1Epsilon: " + (p1Epsilon));
+    System.out.println("p1Zeta: " + (p1Zeta));
+    System.out.println("p2Epsilon: " + (p2Epsilon));
+    System.out.println("p2Zeta: " + (p2Zeta));
+
+    // Compute gamma and delta
+    BigInteger gammaBI = p1Epsilon.multiply(p2Epsilon);
+    BigInteger deltaBI = p1Zeta.multiply(p2Zeta);
+    byte[] gamma = gammaBI.toByteArray();
+    byte[] delta = deltaBI.toByteArray();
+    System.out.println("gamma value is " + gammaBI);
+    System.out.println("gamma is " + Integer.toString(gamma.length) + " bytes long.");
+    System.out.println("delta value is " + deltaBI);
+    System.out.println("delta is " + Integer.toString(delta.length) + " bytes long.");
+
+    // Make the PET ciphertext
+    byte[] PETciphertext = new byte[p1CipherText.length];
+    System.arraycopy(gamma, 0, PETciphertext, half - gamma.length, gamma.length);
+    System.arraycopy(delta, 0, PETciphertext, p1CipherText.length - delta.length, delta.length);
+    System.out.println("PETciphertext value is " + new BigInteger(PETciphertext));
+    System.out.println("PETciphertext is " + Integer.toString(PETciphertext.length) + " bytes long.");
+
+    // Decrypt the PET ciphertext
+    byte[] p1decrypt = player1.decrypt(PETciphertext);
+    byte[] p2decrypt = player2.decrypt(PETciphertext);
+    System.out.println("p1decrypt value is " + new BigInteger(p1decrypt));
+    System.out.println("p1decrypt is " + Integer.toString(p1decrypt.length) + " bytes long.");
+    System.out.println("p2decrypt value is " + new BigInteger(p2decrypt));
+    System.out.println("p2decrypt is " + Integer.toString(p2decrypt.length) + " bytes long.");
+
+    // Debug statements
+    System.out.println("Player1 ciphertext (length " + Integer.toString(p1CipherText.length) + ") is " + new String(p1CipherText));
+    System.out.println("Player2 ciphertext (length " + Integer.toString(p2CipherText.length) + ") is " + new String(p2CipherText));
 
     System.out.println("Player1's message is " + new String(player2.decrypt(p1CipherText)));
     System.out.println("Player2's message is " + new String(player1.decrypt(p2CipherText)));
@@ -51,8 +112,8 @@ public class PET {
       DHParameterSpec elParams = new DHParameterSpec(p, g, keySize);
 
       // Two players
-      Player player1 = new Player("Player1");
-      Player player2 = new Player("Player2");
+      Player player1 = new Player("Player");
+      Player player2 = new Player("Player");
 
       // Initialize as ElGamal players
       player1.initializeElGamal(elParams);
