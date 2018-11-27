@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.params.ElGamalParameters;
 
 public class PET {
 
-  public boolean checkEquality(Player player1, Player player2) {
+  public boolean checkEquality(Player player1, Player player2, BigInteger p) {
     // Have the players encrypt their messages using the other player's public key
     //byte[] p1CipherText = player1.encryptWith(player2.getPublicKey());
     //byte[] p2CipherText = player2.encryptWith(player1.getPublicKey());
@@ -47,18 +47,18 @@ public class PET {
     System.out.println("p2Beta: " + (p2BetaBI));
 
     // Each player computes epsilon and zeta
-    BigInteger p1Epsilon = p1AlphaBI.divide(p2AlphaBI);
-    BigInteger p1Zeta = p1BetaBI.divide(p2BetaBI);
-    BigInteger p2Epsilon = p2AlphaBI.divide(p1AlphaBI);
-    BigInteger p2Zeta = p2BetaBI.divide(p1BetaBI);
+    BigInteger p1Epsilon = p1AlphaBI.multiply(p2AlphaBI.modInverse(p));
+    BigInteger p1Zeta = p1BetaBI.multiply(p2BetaBI.modInverse(p));
+    BigInteger p2Epsilon = p2AlphaBI.multiply(p1AlphaBI.modInverse(p)).modPow(BigInteger.TWO, p);
+    BigInteger p2Zeta = p2BetaBI.multiply(p1BetaBI.modInverse(p)).modPow(BigInteger.TWO, p);
     System.out.println("p1Epsilon: " + (p1Epsilon));
     System.out.println("p1Zeta: " + (p1Zeta));
     System.out.println("p2Epsilon: " + (p2Epsilon));
     System.out.println("p2Zeta: " + (p2Zeta));
 
     // Compute gamma and delta
-    BigInteger gammaBI = p1Epsilon.multiply(p2Epsilon);
-    BigInteger deltaBI = p1Zeta.multiply(p2Zeta);
+    BigInteger gammaBI = p1Epsilon.multiply(p2Epsilon).mod(p);
+    BigInteger deltaBI = p1Zeta.multiply(p2Zeta).mod(p);
     byte[] gamma = gammaBI.toByteArray();
     byte[] delta = deltaBI.toByteArray();
     System.out.println("gamma value is " + gammaBI);
@@ -85,8 +85,8 @@ public class PET {
     System.out.println("Player1 ciphertext (length " + Integer.toString(p1CipherText.length) + ") is " + new String(p1CipherText));
     System.out.println("Player2 ciphertext (length " + Integer.toString(p2CipherText.length) + ") is " + new String(p2CipherText));
 
-    System.out.println("Player1's message is " + new String(player2.decrypt(p1CipherText)));
-    System.out.println("Player2's message is " + new String(player1.decrypt(p2CipherText)));
+    System.out.println("Player1's message is " + new String(player2.decrypt(p1decrypt)));
+    System.out.println("Player2's message is " + new String(player1.decrypt(p2decrypt)));
 
     return true;
   }
@@ -122,7 +122,7 @@ public class PET {
 
       // Instantiate a PET object and check equality
       PET pet = new PET();
-      pet.checkEquality(player1, player2);
+      pet.checkEquality(player1, player2, PandG.getP());
     }
     catch (Exception e) {
       System.out.println("Caught exception: " + e);
