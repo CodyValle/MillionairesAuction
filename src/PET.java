@@ -16,12 +16,28 @@ import org.bouncycastle.crypto.params.ElGamalParameters;
 
 public class PET {
 
-  public boolean checkEquality(Player player1, Player player2, BigInteger p) {
-    // Have the players encrypt their messages using the other player's public key
-    //byte[] p1CipherText = player1.encryptWith(player2.getPublicKey());
-    //byte[] p2CipherText = player2.encryptWith(player1.getPublicKey());
-    byte[] p1CipherText = player1.encrypt_ElGamal();
-    byte[] p2CipherText = player2.encrypt_ElGamal();
+  int keySize;
+  BigInteger p;
+
+  public PET(int keySize, BigInteger p) {
+    this.keySize = keySize;
+    this.p = p;
+  }
+
+  private BigInteger divide(BigInteger numerator, BigInteger denominator, BigInteger modulus) {
+    return denominator.modInverse(modulus).multiply(numerator).mod(modulus);
+  }
+
+  public boolean checkEquality(Player player1, Player player2) {
+    // Have the players encrypt their messages using their own public key
+    byte[] p1CipherText = player1.encrypt(p);
+    byte[] p2CipherText = player2.encryptWith(player1.getPublicKey(), p);
+    System.out.println("Player1 ciphertext (" + Integer.toString(p1CipherText.length * 8) + " bits) is " + new BigInteger(p1CipherText).mod(p).toString(16));
+    System.out.println("Player2 ciphertext (" + Integer.toString(p2CipherText.length * 8) + " bits) is " + new BigInteger(p2CipherText).mod(p).toString(16));
+
+    // Print the encryption of a 1
+    player1.print1Encryption(p);
+    player2.print1Encryption(p);
 
     // Cut the ciphertexts in half. Alpha and beta.
     int half = p1CipherText.length / 2;
@@ -37,56 +53,72 @@ public class PET {
     System.arraycopy(p2CipherText, half, p2Beta, 0, half);
 
     // Convert the alphas and betas to BigIntegers
-    BigInteger p1AlphaBI = new BigInteger(p1Alpha);
-    BigInteger p1BetaBI = new BigInteger(p1Beta);
-    BigInteger p2AlphaBI = new BigInteger(p2Alpha);
-    BigInteger p2BetaBI = new BigInteger(p2Beta);
-    System.out.println("p1Alpha: " + (p1AlphaBI));
-    System.out.println("p1Beta: " + (p1BetaBI));
-    System.out.println("p2Alpha: " + (p2AlphaBI));
-    System.out.println("p2Beta: " + (p2BetaBI));
+    BigInteger p1AlphaBI = new BigInteger(p1Alpha).mod(p);
+    BigInteger p1BetaBI = new BigInteger(p1Beta).mod(p);
+    BigInteger p2AlphaBI = new BigInteger(p2Alpha).mod(p);
+    BigInteger p2BetaBI = new BigInteger(p2Beta).mod(p);
+    System.out.println("p1Alpha: " + p1AlphaBI.toString(16));
+    System.out.println("p1Beta: " + p1BetaBI.toString(16));
+    System.out.println("p2Alpha: " + p2AlphaBI.toString(16));
+    System.out.println("p2Beta: " + p2BetaBI.toString(16));
 
     // Each player computes epsilon and zeta
-    BigInteger p1Epsilon = p1AlphaBI.multiply(p2AlphaBI.modInverse(p));
-    BigInteger p1Zeta = p1BetaBI.multiply(p2BetaBI.modInverse(p));
-    BigInteger p2Epsilon = p2AlphaBI.multiply(p1AlphaBI.modInverse(p)).modPow(BigInteger.TWO, p);
-    BigInteger p2Zeta = p2BetaBI.multiply(p1BetaBI.modInverse(p)).modPow(BigInteger.TWO, p);
-    System.out.println("p1Epsilon: " + (p1Epsilon));
-    System.out.println("p1Zeta: " + (p1Zeta));
-    System.out.println("p2Epsilon: " + (p2Epsilon));
-    System.out.println("p2Zeta: " + (p2Zeta));
+    BigInteger p1RandomZ = new BigInteger("2");
+    BigInteger p2RandomZ = new BigInteger("16");
+    BigInteger p1Epsilon = divide(p1AlphaBI, p2AlphaBI, p).multiply(p1RandomZ).mod(p);
+    BigInteger p1Zeta = divide(p1BetaBI, p2BetaBI, p).multiply(p1RandomZ).mod(p);
+    BigInteger p2Epsilon = divide(p2AlphaBI, p1AlphaBI, p).multiply(p2RandomZ).mod(p);
+    BigInteger p2Zeta = divide(p2BetaBI, p1BetaBI, p).multiply(p2RandomZ).mod(p);
+    {
+      System.out.println("p1Epsilon: " + p1Epsilon.toString(16));
+      System.out.println("p1Zeta: " + p1Zeta.toString(16));
+      System.out.println("p2Epsilon: " + p2Epsilon.toString(16));
+      System.out.println("p2Zeta: " + p2Zeta.toString(16));
+
+      byte[] p1PETCipher = new byte[p1CipherText.length];
+      //BigInteger modder = new BigInteger(p1PETCipher).mod(p);
+      //p1PETCipher = modder.toByteArray();
+      System.arraycopy(p1Epsilon.toByteArray(), 0, p1PETCipher, half - p1Epsilon.toByteArray().length, p1Epsilon.toByteArray().length);
+      System.arraycopy(p1Zeta.toByteArray(), 0, p1PETCipher, p1CipherText.length - p1Zeta.toByteArray().length, p1Zeta.toByteArray().length);
+      System.out.println("p1PETCipher value is " + new BigInteger(p1PETCipher).mod(p).toString(16) + " (" + Integer.toString(p1PETCipher.length * 8) + " bits long)");
+      //byte[] p2PETCipher = new byte[p2CipherText.length];
+      //modder = new BigInteger(p2PETCipher).mod(p);
+      //p2PETCipher = modder.toByteArray();
+      //System.arraycopy(p2Epsilon.toByteArray(), 0, p2PETCipher, half - p2Epsilon.toByteArray().length, p2Epsilon.toByteArray().length);
+      //System.arraycopy(p2Zeta.toByteArray(), 0, p2PETCipher, p2CipherText.length - p2Zeta.toByteArray().length, p2Zeta.toByteArray().length);
+      //System.out.println("p2PETCipher value is " + new BigInteger(p2PETCipher).mod(p).toString(16) + " (" + Integer.toString(p2PETCipher.length * 8) + " bits long)");
+
+      byte[] p1PETCiperDecrypt = player1.decrypt(p1PETCipher);
+      //byte[] p2PETCipherDecrypt = player2.decrypt(p2PETCipher);
+      System.out.println("p1PETCiperDecrypt value is " + new BigInteger(p1PETCiperDecrypt).mod(p).toString(16) + " (" + Integer.toString(p1PETCiperDecrypt.length * 8) + " bits long)");
+      //System.out.println("p2PETCipherDecrypt value is " + new BigInteger(p2PETCipherDecrypt).mod(p).toString(16) + " (" + Integer.toString(p2PETCipherDecrypt.length * 8) + " bits long)");
+    }
 
     // Compute gamma and delta
     BigInteger gammaBI = p1Epsilon.multiply(p2Epsilon).mod(p);
     BigInteger deltaBI = p1Zeta.multiply(p2Zeta).mod(p);
     byte[] gamma = gammaBI.toByteArray();
     byte[] delta = deltaBI.toByteArray();
-    System.out.println("gamma value is " + gammaBI);
-    System.out.println("gamma is " + Integer.toString(gamma.length) + " bytes long.");
-    System.out.println("delta value is " + deltaBI);
-    System.out.println("delta is " + Integer.toString(delta.length) + " bytes long.");
+    System.out.println("gamma value is " + gammaBI + " (" + Integer.toString(gamma.length * 8) + " bits long)");
+    System.out.println("delta value is " + deltaBI + " (" + Integer.toString(delta.length * 8) + " bits long)");
 
     // Make the PET ciphertext
     byte[] PETciphertext = new byte[p1CipherText.length];
     System.arraycopy(gamma, 0, PETciphertext, half - gamma.length, gamma.length);
     System.arraycopy(delta, 0, PETciphertext, p1CipherText.length - delta.length, delta.length);
-    System.out.println("PETciphertext value is " + new BigInteger(PETciphertext));
-    System.out.println("PETciphertext is " + Integer.toString(PETciphertext.length) + " bytes long.");
+    System.out.println("PETciphertext value is " + new BigInteger(PETciphertext).mod(p).toString(16) + " (" + Integer.toString(PETciphertext.length * 8) + " bits long)");
 
     // Decrypt the PET ciphertext
-    byte[] p1decrypt = player1.decrypt(PETciphertext);
-    byte[] p2decrypt = player2.decrypt(PETciphertext);
-    System.out.println("p1decrypt value is " + new BigInteger(p1decrypt));
-    System.out.println("p1decrypt is " + Integer.toString(p1decrypt.length) + " bytes long.");
-    System.out.println("p2decrypt value is " + new BigInteger(p2decrypt));
-    System.out.println("p2decrypt is " + Integer.toString(p2decrypt.length) + " bytes long.");
+    byte[] p1PETDecrypt = player1.decrypt(PETciphertext);
+    byte[] p2PETDecrypt = player2.decrypt(PETciphertext);
+    System.out.println("p1PETDecrypt value is " + new BigInteger(p1PETDecrypt).mod(p).toString(16) + " (" + Integer.toString(p1PETDecrypt.length * 8) + " bits long)");
+    System.out.println("p2PETDecrypt value is " + new BigInteger(p2PETDecrypt).mod(p).toString(16) + " (" + Integer.toString(p2PETDecrypt.length * 8) + " bits long)");
 
-    // Debug statements
-    System.out.println("Player1 ciphertext (length " + Integer.toString(p1CipherText.length) + ") is " + new String(p1CipherText));
-    System.out.println("Player2 ciphertext (length " + Integer.toString(p2CipherText.length) + ") is " + new String(p2CipherText));
+    System.out.println("Player1's message is " + new String(player2.decrypt(p1PETDecrypt)));
+    System.out.println("Player2's message is " + new String(player1.decrypt(p2PETDecrypt)));
 
-    System.out.println("Player1's message is " + new String(player2.decrypt(p1decrypt)));
-    System.out.println("Player2's message is " + new String(player1.decrypt(p2decrypt)));
+    //System.out.println("Player1's message is " + new String(player2.decrypt(p1PETDecrypt)));
+    //System.out.println("Player2's message is " + new String(player1.decrypt(p2PETDecrypt)));
 
     return true;
   }
@@ -97,7 +129,7 @@ public class PET {
       Security.addProvider(new BouncyCastleProvider());
 
       // Set up 
-      final int keySize = 256;
+      final int keySize = 64;
       System.out.println("Keysize bits: " + keySize);
       
       // This is slow. Fifteen minutes on my old machine
@@ -121,8 +153,8 @@ public class PET {
       player2.initializeElGamal(elParams);
 
       // Instantiate a PET object and check equality
-      PET pet = new PET();
-      pet.checkEquality(player1, player2, PandG.getP());
+      PET pet = new PET(keySize, PandG.getP());
+      pet.checkEquality(player1, player2);
     }
     catch (Exception e) {
       System.out.println("Caught exception: " + e);

@@ -1,5 +1,7 @@
 import org.bouncycastle.jce.provider.*;
 
+import java.math.BigInteger;
+
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.Key;
@@ -43,7 +45,22 @@ public class Player {
     return publicKey;
   }
 
-  public byte[] encryptWith(PublicKey publicKey) {
+  public void print1Encryption(BigInteger modulus) {
+    byte[] one = new byte[1];
+    one[0] = 0x01;
+    try {
+      Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
+      cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+      byte[] encrypted1 = cipher.doFinal(one);
+      System.out.println("Encrypted 1: " + new BigInteger(encrypted1).mod(modulus).toString(16));
+    }
+    catch (Exception e) {
+      System.out.println("Caught exception: " + e);
+    }
+  }
+
+  public byte[] encryptWith(PublicKey publicKey, BigInteger p) {
+    System.out.println("Encoding with: " + new String(message) + " (" + new BigInteger(message).mod(p).toString(16) + ")");
     try {
       Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
       cipher.init(Cipher.ENCRYPT_MODE, publicKey);
@@ -56,25 +73,12 @@ public class Player {
     return new byte[0];
   }
 
-  public byte[] encrypt_ElGamal() {
+  public byte[] encrypt(BigInteger p) {
+    System.out.println("Encoding: " + new String(message) + " (" + new BigInteger(message).mod(p).toString(16) + ")");
     try {
       Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
       cipher.init(Cipher.ENCRYPT_MODE, publicKey);
       System.out.println("Cipher output size is " + (cipher.getOutputSize(message.length) * 8) + " bits.");
-      return cipher.doFinal(message);
-    }
-    catch (Exception e) {
-      System.out.println("Caught exception: " + e);
-    }
-
-    return new byte[0];
-  }
-
-  public byte[] encrypt() {
-    try {
-      Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
-      cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-      System.out.println("Cipher output size is " + cipher.getOutputSize(message.length));
       return cipher.doFinal(message);
     }
     catch (Exception e) {
